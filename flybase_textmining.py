@@ -26,7 +26,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import Normalizer
 from sklearn.cluster import KMeans, MiniBatchKMeans
 
-from ortholotree import config
+import config
 
 ######################################################################
 
