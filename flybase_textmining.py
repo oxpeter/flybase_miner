@@ -295,13 +295,9 @@ def cluster_abstracts(genes, common_papers, paper_details, n_clusters=4,
             km = MiniBatchKMeans(n_clusters=n_clusters, init='k-means++', n_init=1,
                      init_size=1000, batch_size=1000, verbose=False)
 
-            verbalise("Y", "Clustering sparse data with %s" % km)
+            verbalise("B", "Clustering sparse data with %s" % km)
             km.fit(X)
 
-
-            verbalise("R",
-                    "Top terms per cluster for common papers between %s and %s" %
-                        (gene1, gene2))
 
             if lsa_size:
                 original_space_centroids = svd.inverse_transform(km.cluster_centers_)
@@ -310,16 +306,12 @@ def cluster_abstracts(genes, common_papers, paper_details, n_clusters=4,
                 order_centroids = km.cluster_centers_.argsort()[:, ::-1]
 
             terms = vectorizer.get_feature_names()
-            for i in range(n_clusters):
-                verbalise("M", "Cluster %d:" % i)
-                for ind in order_centroids[i, :10]:
-                    verbalise("G", ' %s' % terms[ind])
-                print
 
             labels[gene1,gene2] = (km.predict(X),
                                     [ paper_details[t] for t in common_papers[gene1][gene2]
                                         if paper_details[t][2] ],
                                     order_centroids,
+                                    terms,
                                     )
 
     return labels
@@ -395,21 +387,29 @@ if __name__ == '__main__':
     # clustering of abstracts!
     labels = cluster_abstracts(args.gene, common_papers, paper_details, n_clusters=args.n_clusters,
                         min_text_num=args.max, lsa_size=args.lsa)
+
+    handle = open("%stext_clustering.out" % logfile[:-3], 'w')
     for g1,g2 in labels:
+        verbalise("R",  "Clustering of common papers between %s and %s" % (g1, g2))
+        handle.write("### Clustering of common papers between %s and %s\n" % (g1, g2))
         clusters = sorted(zip(labels[g1,g2][0],labels[g1,g2][1]), key=lambda x:x[0])
-        for i in range(max(labels[g1,g2][0])):
-            verbalise("M", "Cluster %d" % i)
+        for i in range(max(labels[g1,g2][0]) + 1):
+            verbalise("M",
+                ">Cluster %d (%d papers)" % (i,
+                                            sum(1 for p in labels[g1,g2][0] if p == i) ))
             verbalise("B", "most important terms in cluster:")
+            handle.write("Cluster %d\nmost important terms in cluster:\n" % i)
             for ind in labels[g1,g2][2][i, :10]:
-                verbalise("C", ' %s' % terms[ind])
+                verbalise("C", '   %s' % labels[g1,g2][3][ind])
+                handle.write('   %s' % labels[g1,g2][3][ind])
             print
             cdocs = [ d for d in clusters if d[0] == i ]
             for doc in cdocs:
-                verbalise("G", doc[1][0])
-                verbalise("Y", doc[1][2])
-                print ""
-
-
+                #verbalise("G", doc[1][0])
+                #verbalise("Y", doc[1][2])
+                #print ""
+                handle.write( "%s\n%s\n%s\n\n" % (doc[1][0], doc[1][1], doc[1][2]))
+    handle.close()
 
     # clean up temp files and directory
     for file in [ "notheere", "alsonothere" ]:
