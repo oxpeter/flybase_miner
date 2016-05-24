@@ -52,7 +52,7 @@ def define_arguments():
     parser.add_argument("gene", type=str, nargs='+',
                         help="A flybase gene id (format FBgn0000000")
 
-    # analysis options:
+    # network analysis options:
     parser.add_argument('-n', "--network", type=int, default=1,
                         help="""Type of network to draw. 1=circular, 2=random, 3=spectral,
                          4=spring, 5=shell, 6=pygraphvis
@@ -62,6 +62,8 @@ def define_arguments():
                         [default = 20]""")
     parser.add_argument("--min", type=float, default=5,
                         help="""Minimum network weight to display [default=5]""")
+
+    # clustering analysis options:
     parser.add_argument('-l', "--lsa", type=int,
                         help="""number of components to use for latent semantic analysis.
                         2 is good for visualization, 100 is good for analysis.
@@ -394,14 +396,14 @@ if __name__ == '__main__':
         handle.write("### Clustering of common papers between %s and %s\n" % (g1, g2))
         clusters = sorted(zip(labels[g1,g2][0],labels[g1,g2][1]), key=lambda x:x[0])
         for i in range(max(labels[g1,g2][0]) + 1):
+            num_papers = sum(1 for p in labels[g1,g2][0] if p == i)
             verbalise("M",
-                ">Cluster %d (%d papers)" % (i,
-                                            sum(1 for p in labels[g1,g2][0] if p == i) ))
+                "Cluster %d (%d papers)" % (i,num_papers ))
             verbalise("B", "most important terms in cluster:")
-            handle.write("Cluster %d\nmost important terms in cluster:\n" % i)
+            handle.write(">Cluster %d (%d papers):\n" % (i, num_papers))
             for ind in labels[g1,g2][2][i, :10]:
                 verbalise("C", '   %s' % labels[g1,g2][3][ind])
-                handle.write('   %s' % labels[g1,g2][3][ind])
+                handle.write('   %s\n' % labels[g1,g2][3][ind])
             print
             cdocs = [ d for d in clusters if d[0] == i ]
             for doc in cdocs:
