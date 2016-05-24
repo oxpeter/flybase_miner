@@ -297,9 +297,6 @@ def cluster_abstracts(genes, common_papers, paper_details, n_clusters=4,
 
             verbalise("Y", "Clustering sparse data with %s" % km)
             km.fit(X)
-            labels[gene1,gene2] = km.predict(X), [ paper_details[t]
-                                                    for t in common_papers[gene1][gene2]
-                                                    if paper_details[t][2] ]
 
 
             verbalise("R",
@@ -318,13 +315,18 @@ def cluster_abstracts(genes, common_papers, paper_details, n_clusters=4,
                 for ind in order_centroids[i, :10]:
                     verbalise("G", ' %s' % terms[ind])
                 print
+
+            labels[gene1,gene2] = (km.predict(X),
+                                    [ paper_details[t] for t in common_papers[gene1][gene2]
+                                        if paper_details[t][2] ],
+                                    order_centroids,
+                                    )
+
     return labels
 
 ############################################################
 
 if __name__ == '__main__':
-    dbpaths = config.import_paths()
-
     parser = define_arguments()
     args = parser.parse_args()
 
@@ -394,9 +396,13 @@ if __name__ == '__main__':
     labels = cluster_abstracts(args.gene, common_papers, paper_details, n_clusters=args.n_clusters,
                         min_text_num=args.max, lsa_size=args.lsa)
     for g1,g2 in labels:
-        clusters = sorted(zip(*labels[g1,g2]), key=lambda x:x[0])
+        clusters = sorted(zip(labels[g1,g2][0],labels[g1,g2][1]), key=lambda x:x[0])
         for i in range(max(labels[g1,g2][0])):
             verbalise("M", "Cluster %d" % i)
+            verbalise("B", "most important terms in cluster:")
+            for ind in labels[g1,g2][2][i, :10]:
+                verbalise("C", ' %s' % terms[ind])
+            print
             cdocs = [ d for d in clusters if d[0] == i ]
             for doc in cdocs:
                 verbalise("G", doc[1][0])
